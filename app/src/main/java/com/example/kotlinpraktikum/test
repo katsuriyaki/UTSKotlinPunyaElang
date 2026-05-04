@@ -1,0 +1,179 @@
+@Composable
+fun BasicComposableDemo(modifier: Modifier = Modifier){
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+
+        Text(
+            text = "This is a Text",
+            fontSize = 24.sp,
+            color = Color.Blue
+        )
+        Spacer( modifier = Modifier.height(16.dp) )
+
+        Button(onClick = {println("Button clicked!")}) {
+            Text("Click Me!")
+        }
+        Spacer( modifier = Modifier.height(16.dp) )
+
+        Row {
+            Text(
+                "Left",
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "Center",
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "Right",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+@Composable
+fun CounterApp(modifier: Modifier = Modifier) {
+    var count by remember { mutableStateOf(0) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Count = $count",
+            fontSize = 48.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6200EE)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(
+
+          onClick = { count-- },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE53935)
+                )
+            ) {
+                Text("Reset", fontSize = 16.sp)
+            }
+        }
+        Button(
+            onClick = { count++ },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF43A847)
+            )
+        ) {
+            Text("+", fontSize = 24.sp)
+        }
+    }
+}
+
+@Composable
+fun SecureCounterApp(modifier: Modifier = Modifier) {
+    var secureCount by remember { mutableStateOf(0) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        Text(
+            text = "Aplikasi Penghitung",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF197602)
+        )
+
+        Text(
+            text = "Dilindungi dengan FLAG_SECURE",
+            fontSize = 14.sp,
+            color = Color(0xFF757575),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFE3F2FD)
+            )
+        ) {
+            Text(
+                text = "$secureCount",
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1976D2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = { secureCount-- },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                modifier = Modifier.size(80.dp, 56.dp)
+            ) {
+                Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            }
+
+            OutlinedButton(
+                onClick = { secureCount = 0 },
+                modifier = Modifier.size(100.dp, 56.dp)
+            ) {
+                Text("Reset", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Button(
+                onClick = { secureCount++ },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047)),
+                modifier = Modifier.size(80.dp, 56.dp)
+            ) {
+                Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+
+                Text(
+                    text = "Fitur Keamanan:",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE65100)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("• Tangkapan layar diblokir", fontSize = 13.sp)
+                Text("• Rekaman layar diblokir", fontSize = 13.sp)
+                Text("• Recent apps preview disembunyikan", fontSize = 13.sp)
+                Text("• Pencegahan tapjacking", fontSize = 13.sp)
+            }
+        }
+    }
+}
