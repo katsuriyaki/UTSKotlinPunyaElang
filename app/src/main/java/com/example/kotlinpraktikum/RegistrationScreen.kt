@@ -20,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,13 +71,20 @@ fun RegistrationScreen(
     val passwordError by viewModel.passwordError.collectAsState()
     val confirmPasswordError by viewModel.confirmPasswordError.collectAsState()
 
+    // Re-evaluate canSubmit whenever any relevant state changes
     val canSubmit by remember {
-        derivedStateOf { viewModel.canSubmit() }
+        derivedStateOf {
+            nim.length >= 8 && !nimError &&
+                    namaLengkap.length >= 8 && !namaLengkapError &&
+                    nomorTelepon.length in 10..13 && !nomorTeleponError &&
+                    email.isNotEmpty() && !emailError &&
+                    password.isNotEmpty() && !passwordError &&
+                    confirmPassword.isNotEmpty() && !confirmPasswordError
+        }
     }
 
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-
     var kelasExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -106,6 +114,7 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── NIM ──────────────────────────────────────────────────────────
             item {
                 OutlinedTextField(
                     value = nim,
@@ -144,6 +153,7 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── Jenis Kelamin ────────────────────────────────────────────────
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -157,9 +167,7 @@ fun RegistrationScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         listOf("Laki-Laki", "Perempuan").forEach { gender ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 RadioButton(
                                     selected = jenisKelamin == gender,
                                     onClick = { viewModel.updateJenisKelamin(gender) }
@@ -175,6 +183,7 @@ fun RegistrationScreen(
                 }
             }
 
+            // ── Kelas ────────────────────────────────────────────────────────
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -195,10 +204,7 @@ fun RegistrationScreen(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             trailingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null
-                                )
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = kelasExpanded)
                             }
                         )
                         ExposedDropdownMenu(
@@ -219,6 +225,7 @@ fun RegistrationScreen(
                 }
             }
 
+            // ── Nomor Telepon ────────────────────────────────────────────────
             item {
                 OutlinedTextField(
                     value = nomorTelepon,
@@ -238,11 +245,13 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── Email ────────────────────────────────────────────────────────
             item {
                 OutlinedTextField(
                     value = email,
                     onValueChange = { viewModel.updateEmail(it) },
                     label = { Text("Email") },
+                    placeholder = { Text("Contoh: nama@email.com") },
                     modifier = Modifier.fillMaxWidth(),
                     isError = emailError,
                     supportingText = {
@@ -256,6 +265,7 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── Password ─────────────────────────────────────────────────────
             item {
                 OutlinedTextField(
                     value = password,
@@ -276,7 +286,7 @@ fun RegistrationScreen(
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = null
+                                contentDescription = if (passwordVisible) "Sembunyikan password" else "Tampilkan password"
                             )
                         }
                     },
@@ -284,6 +294,7 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── Konfirmasi Password ──────────────────────────────────────────
             item {
                 OutlinedTextField(
                     value = confirmPassword,
@@ -302,7 +313,7 @@ fun RegistrationScreen(
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
                                 imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = null
+                                contentDescription = if (confirmPasswordVisible) "Sembunyikan password" else "Tampilkan password"
                             )
                         }
                     },
@@ -310,6 +321,7 @@ fun RegistrationScreen(
                 )
             }
 
+            // ── Buttons ──────────────────────────────────────────────────────
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -325,11 +337,7 @@ fun RegistrationScreen(
                     }
 
                     Button(
-                        onClick = {
-                            if (canSubmit) {
-                                viewModel.submitRegistration()
-                            }
-                        },
+                        onClick = { viewModel.submitRegistration() },
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
@@ -340,12 +348,11 @@ fun RegistrationScreen(
                 }
             }
 
+            // ── Security Info Card ───────────────────────────────────────────
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFF3E0)
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -357,15 +364,19 @@ fun RegistrationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Password tidak terlihat", style = MaterialTheme.typography.bodySmall)
                         Text("Validasi real-time", style = MaterialTheme.typography.bodySmall)
-                        Text("Indikator kekuatan password", style = MaterialTheme.typography.bodySmall)
-                        Text("Data sensitif tidak di-log", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "Indikator kekuatan password",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Data sensitif tidak di-log",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+            item { Spacer(modifier = Modifier.height(32.dp)) }
         }
     }
 }

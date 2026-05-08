@@ -52,9 +52,13 @@ class RegistrationViewModel : ViewModel() {
     private val _confirmPasswordError = MutableStateFlow(false)
     val confirmPasswordError: StateFlow<Boolean> = _confirmPasswordError.asStateFlow()
 
+    // ── Navigation state ─────────────────────────────────────────────────────
+    /** Non-null when registration succeeds; drive navigation in the UI. */
+    private val _submittedProfile = MutableStateFlow<ProfileData?>(null)
+    val submittedProfile: StateFlow<ProfileData?> = _submittedProfile.asStateFlow()
+
 
     fun updateNim(newNim: String) {
-        // Only allow digits
         val digits = newNim.filter { it.isDigit() }
         _nim.value = digits
         _nimError.value = digits.isNotEmpty() && digits.length < 8
@@ -98,7 +102,6 @@ class RegistrationViewModel : ViewModel() {
             newConfirmPassword.isNotEmpty() && newConfirmPassword != _password.value
     }
 
-
     private fun isValidEmail(email: String): Boolean {
         return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
@@ -140,12 +143,27 @@ class RegistrationViewModel : ViewModel() {
                 !_confirmPasswordError.value
     }
 
+    /**
+     * Validate, build a [ProfileData] snapshot, and expose it via [submittedProfile].
+     * The UI observes [submittedProfile] and navigates to ProfileScreen when it is non-null.
+     */
     fun submitRegistration() {
         if (canSubmit()) {
-            println("Registration successful for: ${_email.value}")
-            android.util.Log.d("Registration", "NIM: ${_nim.value}, Nama: ${_namaLengkap.value}")
-            clearAllData()
+            _submittedProfile.value = ProfileData(
+                nim = _nim.value,
+                namaLengkap = _namaLengkap.value,
+                jenisKelamin = _jenisKelamin.value,
+                kelas = _kelas.value,
+                nomorTelepon = _nomorTelepon.value,
+                email = _email.value
+            )
         }
+    }
+
+    /** Called after the UI has consumed the navigation event. */
+    fun onProfileNavigated() {
+        clearAllData()
+        _submittedProfile.value = null
     }
 
     fun cancelRegistration() {
