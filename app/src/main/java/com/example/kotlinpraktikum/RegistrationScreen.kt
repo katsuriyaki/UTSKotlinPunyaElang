@@ -1,5 +1,7 @@
 package com.example.kotlinpraktikum
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -45,7 +46,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -55,23 +55,22 @@ fun RegistrationScreen(
     modifier: Modifier = Modifier,
     viewModel: RegistrationViewModel = viewModel()
 ) {
-    val nim by viewModel.nim.collectAsState()
-    val namaLengkap by viewModel.namaLengkap.collectAsState()
-    val jenisKelamin by viewModel.jenisKelamin.collectAsState()
-    val kelas by viewModel.kelas.collectAsState()
-    val nomorTelepon by viewModel.nomorTelepon.collectAsState()
-    val email by viewModel.email.collectAsState()
-    val password by viewModel.password.collectAsState()
+    val nim            by viewModel.nim.collectAsState()
+    val namaLengkap    by viewModel.namaLengkap.collectAsState()
+    val jenisKelamin   by viewModel.jenisKelamin.collectAsState()
+    val kelas          by viewModel.kelas.collectAsState()
+    val nomorTelepon   by viewModel.nomorTelepon.collectAsState()
+    val email          by viewModel.email.collectAsState()
+    val password       by viewModel.password.collectAsState()
     val confirmPassword by viewModel.confirmPassword.collectAsState()
 
-    val nimError by viewModel.nimError.collectAsState()
-    val namaLengkapError by viewModel.namaLengkapError.collectAsState()
-    val nomorTeleponError by viewModel.nomorTeleponError.collectAsState()
-    val emailError by viewModel.emailError.collectAsState()
-    val passwordError by viewModel.passwordError.collectAsState()
+    val nimError             by viewModel.nimError.collectAsState()
+    val namaLengkapError     by viewModel.namaLengkapError.collectAsState()
+    val nomorTeleponError    by viewModel.nomorTeleponError.collectAsState()
+    val emailError           by viewModel.emailError.collectAsState()
+    val passwordError        by viewModel.passwordError.collectAsState()
     val confirmPasswordError by viewModel.confirmPasswordError.collectAsState()
 
-    // Re-evaluate canSubmit whenever any relevant state changes
     val canSubmit by remember {
         derivedStateOf {
             nim.length >= 8 && !nimError &&
@@ -83,9 +82,17 @@ fun RegistrationScreen(
         }
     }
 
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible        by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var kelasExpanded by remember { mutableStateOf(false) }
+    var kelasExpanded          by remember { mutableStateOf(false) }
+
+    // InteractionSources for focus-triggered hints
+    val nimInteraction          = remember { MutableInteractionSource() }
+    val namaInteraction         = remember { MutableInteractionSource() }
+    val teleponInteraction      = remember { MutableInteractionSource() }
+    val nimFocused     by nimInteraction.collectIsFocusedAsState()
+    val namaFocused    by namaInteraction.collectIsFocusedAsState()
+    val teleponFocused by teleponInteraction.collectIsFocusedAsState()
 
     Scaffold(
         topBar = {
@@ -120,8 +127,12 @@ fun RegistrationScreen(
                     value = nim,
                     onValueChange = { viewModel.updateNim(it) },
                     label = { Text("NIM") },
-                    placeholder = { Text("Contoh: 12345678") },
+                    // Hint appears only when field is focused and still empty
+                    placeholder = {
+                        if (nimFocused) Text("Contoh: 12345678")
+                    },
                     modifier = Modifier.fillMaxWidth(),
+                    interactionSource = nimInteraction,
                     isError = nimError,
                     supportingText = {
                         if (nimError) Text(
@@ -140,8 +151,11 @@ fun RegistrationScreen(
                     value = namaLengkap,
                     onValueChange = { viewModel.updateNamaLengkap(it) },
                     label = { Text("Nama Lengkap") },
-                    placeholder = { Text("Contoh: Budi Santoso") },
+                    placeholder = {
+                        if (namaFocused) Text("Contoh: Budi Santoso")
+                    },
                     modifier = Modifier.fillMaxWidth(),
+                    interactionSource = namaInteraction,
                     isError = namaLengkapError,
                     supportingText = {
                         if (namaLengkapError) Text(
@@ -231,8 +245,11 @@ fun RegistrationScreen(
                     value = nomorTelepon,
                     onValueChange = { viewModel.updateNomorTelepon(it) },
                     label = { Text("Nomor Telepon") },
-                    placeholder = { Text("Contoh: 08123456789") },
+                    placeholder = {
+                        if (teleponFocused) Text("Contoh: 08123456789")
+                    },
                     modifier = Modifier.fillMaxWidth(),
+                    interactionSource = teleponInteraction,
                     isError = nomorTeleponError,
                     supportingText = {
                         if (nomorTeleponError) Text(
@@ -272,21 +289,27 @@ fun RegistrationScreen(
                     onValueChange = { viewModel.updatePassword(it) },
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None else PasswordVisualTransformation(),
                     isError = passwordError,
                     supportingText = {
-                        if (passwordError) {
-                            Text("Minimal 8 karakter", color = MaterialTheme.colorScheme.error)
-                        } else if (password.isNotEmpty()) {
-                            val strength = viewModel.passwordStrength(password)
-                            Text("Strength: $strength", fontWeight = FontWeight.Bold)
+                        when {
+                            passwordError ->
+                                Text("Minimal 8 karakter",
+                                    color = MaterialTheme.colorScheme.error)
+                            password.isNotEmpty() -> {
+                                val strength = viewModel.passwordStrength(password)
+                                Text("Strength: $strength", fontWeight = FontWeight.Bold)
+                            }
                         }
                     },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Sembunyikan password" else "Tampilkan password"
+                                imageVector = if (passwordVisible)
+                                    Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible)
+                                    "Sembunyikan password" else "Tampilkan password"
                             )
                         }
                     },
@@ -301,7 +324,8 @@ fun RegistrationScreen(
                     onValueChange = { viewModel.updateConfirmPassword(it) },
                     label = { Text("Konfirmasi Password") },
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (confirmPasswordVisible)
+                        VisualTransformation.None else PasswordVisualTransformation(),
                     isError = confirmPasswordError,
                     supportingText = {
                         if (confirmPasswordError) Text(
@@ -310,10 +334,14 @@ fun RegistrationScreen(
                         )
                     },
                     trailingIcon = {
-                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        IconButton(onClick = {
+                            confirmPasswordVisible = !confirmPasswordVisible
+                        }) {
                             Icon(
-                                imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (confirmPasswordVisible) "Sembunyikan password" else "Tampilkan password"
+                                imageVector = if (confirmPasswordVisible)
+                                    Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (confirmPasswordVisible)
+                                    "Sembunyikan password" else "Tampilkan password"
                             )
                         }
                     },
@@ -329,18 +357,13 @@ fun RegistrationScreen(
                 ) {
                     OutlinedButton(
                         onClick = { viewModel.cancelRegistration() },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
+                        modifier = Modifier.weight(1f).height(56.dp)
                     ) {
                         Text("Cancel", style = MaterialTheme.typography.titleMedium)
                     }
-
                     Button(
                         onClick = { viewModel.submitRegistration() },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
+                        modifier = Modifier.weight(1f).height(56.dp),
                         enabled = canSubmit
                     ) {
                         Text("Register", style = MaterialTheme.typography.titleMedium)
@@ -362,16 +385,14 @@ fun RegistrationScreen(
                             color = Color(0xFFE65100)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Password tidak terlihat", style = MaterialTheme.typography.bodySmall)
-                        Text("Validasi real-time", style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            "Indikator kekuatan password",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "Data sensitif tidak di-log",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text("Password tidak terlihat",
+                            style = MaterialTheme.typography.bodySmall)
+                        Text("Validasi real-time",
+                            style = MaterialTheme.typography.bodySmall)
+                        Text("Indikator kekuatan password",
+                            style = MaterialTheme.typography.bodySmall)
+                        Text("Data sensitif tidak di-log",
+                            style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -379,10 +400,4 @@ fun RegistrationScreen(
             item { Spacer(modifier = Modifier.height(32.dp)) }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegistrationScreenPreview() {
-    RegistrationScreen()
 }
